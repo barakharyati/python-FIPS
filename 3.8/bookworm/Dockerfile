@@ -38,8 +38,14 @@ RUN set -eux; \
 	xz-utils; \
 	rm -rf /var/lib/apt/lists/*
 
+# Enable FIPS mode
+RUN fips-mode-setup --enable && update-crypto-policies --set FIPS
+
 ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
 ENV PYTHON_VERSION 3.8.20
+
+
+# Download, verify, extract, and build Python
 
 RUN set -eux; \
 	\
@@ -57,34 +63,34 @@ RUN set -eux; \
 	cd /usr/src/python; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
-		--build="$gnuArch" \
-		--enable-loadable-sqlite-extensions \
-		--enable-optimizations \
-		--enable-option-checking=fatal \
-		--enable-shared \
-		--with-system-expat \
-		--with-ensurepip \
+	--build="$gnuArch" \
+	--enable-loadable-sqlite-extensions \
+	--enable-optimizations \
+	--enable-option-checking=fatal \
+	--enable-shared \
+	--with-system-expat \
+	--with-ensurepip \
 	; \
 	nproc="$(nproc)"; \
 	EXTRA_CFLAGS="$(dpkg-buildflags --get CFLAGS)"; \
 	LDFLAGS="$(dpkg-buildflags --get LDFLAGS)"; \
 	make -j "$nproc" \
-		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
-		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
+	"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
+	"LDFLAGS=${LDFLAGS:-}" \
+	"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
-# https://github.com/docker-library/python/issues/784
-# prevent accidental usage of a system installed libpython of the same version
+	# https://github.com/docker-library/python/issues/784
+	# prevent accidental usage of a system installed libpython of the same version
 	rm python; \
 	make -j "$nproc" \
-		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
-		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
-		python \
+	"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
+	"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
+	"PROFILE_TASK=${PROFILE_TASK:-}" \
+	python \
 	; \
 	make install; \
 	\
-# enable GDB to load debugging data: https://github.com/docker-library/python/pull/701
+	# enable GDB to load debugging data: https://github.com/docker-library/python/pull/701
 	bin="$(readlink -ve /usr/local/bin/python3)"; \
 	dir="$(dirname "$bin")"; \
 	mkdir -p "/usr/share/gdb/auto-load/$dir"; \
@@ -94,11 +100,11 @@ RUN set -eux; \
 	rm -rf /usr/src/python; \
 	\
 	find /usr/local -depth \
-		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
-			-o \( -type f -a -name 'wininst-*.exe' \) \
-		\) -exec rm -rf '{}' + \
+	\( \
+	\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
+	-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
+	-o \( -type f -a -name 'wininst-*.exe' \) \
+	\) -exec rm -rf '{}' + \
 	; \
 	\
 	ldconfig; \
@@ -107,21 +113,21 @@ RUN set -eux; \
 	python3 --version; \
 	\
 	pip3 install \
-		--disable-pip-version-check \
-		--no-cache-dir \
-		--no-compile \
-		'setuptools==57.5.0' \
-		wheel \
+	--disable-pip-version-check \
+	--no-cache-dir \
+	--no-compile \
+	'setuptools==57.5.0' \
+	wheel \
 	; \
 	pip3 --version
 
 # make some useful symlinks that are expected to exist ("/usr/local/bin/python" and friends)
 RUN set -eux; \
 	for src in idle3 pip3 pydoc3 python3 python3-config; do \
-		dst="$(echo "$src" | tr -d 3)"; \
-		[ -s "/usr/local/bin/$src" ]; \
-		[ ! -e "/usr/local/bin/$dst" ]; \
-		ln -svT "$src" "/usr/local/bin/$dst"; \
+	dst="$(echo "$src" | tr -d 3)"; \
+	[ -s "/usr/local/bin/$src" ]; \
+	[ ! -e "/usr/local/bin/$dst" ]; \
+	ln -svT "$src" "/usr/local/bin/$dst"; \
 	done
 
 CMD ["python3"]
