@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM buildpack-deps:bookworm
+FROM ubuntu:20.04
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
