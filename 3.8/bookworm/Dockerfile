@@ -14,14 +14,28 @@ ENV PATH /usr/local/bin:$PATH
 # https://github.com/docker-library/python/pull/570
 ENV LANG C.UTF-8
 
-# runtime dependencies
+
+# Install required dependencies and FIPS packages
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		libbluetooth-dev \
-		tk-dev \
-		uuid-dev \
-	; \
+	libbluetooth-dev \
+	tk-dev \
+	uuid-dev \
+	openssl \
+	libssl-dev \
+	fips-mode-setup \
+	ca-certificates \
+	wget \
+	build-essential \
+	zlib1g-dev \
+	libbz2-dev \
+	libreadline-dev \
+	libsqlite3-dev \
+	libffi-dev \
+	libgdbm-dev \
+	libnss3-dev \
+	xz-utils; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
